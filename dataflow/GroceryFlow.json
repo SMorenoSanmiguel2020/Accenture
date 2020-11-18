@@ -1,0 +1,35 @@
+{
+	"name": "GroceryFlow",
+	"properties": {
+		"type": "MappingDataFlow",
+		"typeProperties": {
+			"sources": [
+				{
+					"dataset": {
+						"referenceName": "GroceryInput",
+						"type": "DatasetReference"
+					},
+					"name": "GroceryDataset"
+				}
+			],
+			"sinks": [
+				{
+					"dataset": {
+						"referenceName": "GroceryOutput",
+						"type": "DatasetReference"
+					},
+					"name": "DatasetModified"
+				}
+			],
+			"transformations": [
+				{
+					"name": "SelectSpecificColumns"
+				},
+				{
+					"name": "NewColumnAdded"
+				}
+			],
+			"script": "source(output(\n\t\tid as string,\n\t\tfirst_name as string,\n\t\tlast_name as string,\n\t\temail as string,\n\t\tgender as string,\n\t\tcity as string,\n\t\tcountry as string,\n\t\tmost_purchased_product as string,\n\t\tmax_bags as integer,\n\t\tleast_purchased_product as string,\n\t\tmin_bags as integer\n\t),\n\tallowSchemaDrift: true,\n\tvalidateSchema: false,\n\tignoreNoFilesFound: false) ~> GroceryDataset\nGroceryDataset select(mapColumn(\n\t\tid,\n\t\tfirst_name,\n\t\tmost_purchased_product,\n\t\tmax_bags,\n\t\tleast_purchased_product,\n\t\tmin_bags\n\t),\n\tskipDuplicateMapInputs: true,\n\tskipDuplicateMapOutputs: true) ~> SelectSpecificColumns\nSelectSpecificColumns derive(grocery_id = concat(first_name,id)) ~> NewColumnAdded\nNewColumnAdded sink(input(\n\t\tid as string,\n\t\tfirst_name as string,\n\t\tlast_name as string,\n\t\temail as string,\n\t\tgender as string,\n\t\tcity as string,\n\t\tcountry as string,\n\t\tmost_purchased_product as string,\n\t\tmax_bags as string,\n\t\tleast_purchased_product as string,\n\t\tmin_bags as string\n\t),\n\tallowSchemaDrift: true,\n\tvalidateSchema: false,\n\tpartitionFileNames:['grocery_purchase.csv'],\n\tpartitionBy('hash', 1),\n\tskipDuplicateMapInputs: true,\n\tskipDuplicateMapOutputs: true) ~> DatasetModified"
+		}
+	}
+}

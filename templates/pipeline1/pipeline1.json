@@ -1,0 +1,238 @@
+{
+	"$schema": "http://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+	"contentVersion": "1.0.0.0",
+	"parameters": {
+		"factoryName": {
+			"type": "string",
+			"metadata": "Data Factory name"
+		},
+		"Firstlinkedservice": {
+			"type": "string"
+		}
+	},
+	"variables": {
+		"factoryId": "[concat('Microsoft.DataFactory/factories/', parameters('factoryName'))]"
+	},
+	"resources": [
+		{
+			"name": "[concat(parameters('factoryName'), '/pipeline1')]",
+			"type": "Microsoft.DataFactory/factories/pipelines",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"activities": [
+					{
+						"name": "GroceryFlow",
+						"type": "ExecuteDataFlow",
+						"dependsOn": [],
+						"policy": {
+							"timeout": "7.00:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"dataflow": {
+								"referenceName": "GroceryFlow",
+								"type": "DataFlowReference"
+							},
+							"compute": {
+								"coreCount": 8,
+								"computeType": "General"
+							},
+							"traceLevel": "Fine"
+						}
+					}
+				],
+				"annotations": [],
+				"lastPublishTime": "2020-11-18T19:14:30Z"
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/dataflows/GroceryFlow')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/GroceryFlow')]",
+			"type": "Microsoft.DataFactory/factories/dataflows",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"type": "MappingDataFlow",
+				"typeProperties": {
+					"sources": [
+						{
+							"dataset": {
+								"referenceName": "GroceryInput",
+								"type": "DatasetReference"
+							},
+							"name": "GroceryDataset"
+						}
+					],
+					"sinks": [
+						{
+							"dataset": {
+								"referenceName": "GroceryOutput",
+								"type": "DatasetReference"
+							},
+							"name": "DatasetModified"
+						}
+					],
+					"transformations": [
+						{
+							"name": "SelectSpecificColumns"
+						},
+						{
+							"name": "NewColumnAdded"
+						}
+					],
+					"script": "source(output(\n\t\tid as string,\n\t\tfirst_name as string,\n\t\tlast_name as string,\n\t\temail as string,\n\t\tgender as string,\n\t\tcity as string,\n\t\tcountry as string,\n\t\tmost_purchased_product as string,\n\t\tmax_bags as integer,\n\t\tleast_purchased_product as string,\n\t\tmin_bags as integer\n\t),\n\tallowSchemaDrift: true,\n\tvalidateSchema: false,\n\tignoreNoFilesFound: false) ~> GroceryDataset\nGroceryDataset select(mapColumn(\n\t\tid,\n\t\tfirst_name,\n\t\tmost_purchased_product,\n\t\tmax_bags,\n\t\tleast_purchased_product,\n\t\tmin_bags\n\t),\n\tskipDuplicateMapInputs: true,\n\tskipDuplicateMapOutputs: true) ~> SelectSpecificColumns\nSelectSpecificColumns derive(grocery_id = concat(first_name,id)) ~> NewColumnAdded\nNewColumnAdded sink(input(\n\t\tid as string,\n\t\tfirst_name as string,\n\t\tlast_name as string,\n\t\temail as string,\n\t\tgender as string,\n\t\tcity as string,\n\t\tcountry as string,\n\t\tmost_purchased_product as string,\n\t\tmax_bags as string,\n\t\tleast_purchased_product as string,\n\t\tmin_bags as string\n\t),\n\tallowSchemaDrift: true,\n\tvalidateSchema: false,\n\tpartitionFileNames:['grocery_purchase.csv'],\n\tpartitionBy('hash', 1),\n\tskipDuplicateMapInputs: true,\n\tskipDuplicateMapOutputs: true) ~> DatasetModified"
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/datasets/GroceryInput')]",
+				"[concat(variables('factoryId'), '/datasets/GroceryOutput')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/GroceryInput')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "[parameters('Firstlinkedservice')]",
+					"type": "LinkedServiceReference"
+				},
+				"annotations": [],
+				"type": "DelimitedText",
+				"typeProperties": {
+					"location": {
+						"type": "AzureBlobStorageLocation",
+						"fileName": "grocery_users.csv",
+						"container": "container"
+					},
+					"columnDelimiter": ",",
+					"escapeChar": "\\",
+					"firstRowAsHeader": true,
+					"quoteChar": "\""
+				},
+				"schema": [
+					{
+						"name": "id",
+						"type": "String"
+					},
+					{
+						"name": "first_name",
+						"type": "String"
+					},
+					{
+						"name": "last_name",
+						"type": "String"
+					},
+					{
+						"name": "email",
+						"type": "String"
+					},
+					{
+						"name": "gender",
+						"type": "String"
+					},
+					{
+						"name": "city",
+						"type": "String"
+					},
+					{
+						"name": "country",
+						"type": "String"
+					},
+					{
+						"name": "most_purchased_product",
+						"type": "String"
+					},
+					{
+						"name": "max_bags",
+						"type": "String"
+					},
+					{
+						"name": "least_purchased_product",
+						"type": "String"
+					},
+					{
+						"name": "min_bags",
+						"type": "String"
+					}
+				]
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/GroceryOutput')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "[parameters('Firstlinkedservice')]",
+					"type": "LinkedServiceReference"
+				},
+				"annotations": [],
+				"type": "DelimitedText",
+				"typeProperties": {
+					"location": {
+						"type": "AzureBlobStorageLocation",
+						"container": "container"
+					},
+					"columnDelimiter": ",",
+					"escapeChar": "\\",
+					"firstRowAsHeader": true,
+					"quoteChar": "\""
+				},
+				"schema": [
+					{
+						"name": "id",
+						"type": "String"
+					},
+					{
+						"name": "first_name",
+						"type": "String"
+					},
+					{
+						"name": "last_name",
+						"type": "String"
+					},
+					{
+						"name": "email",
+						"type": "String"
+					},
+					{
+						"name": "gender",
+						"type": "String"
+					},
+					{
+						"name": "city",
+						"type": "String"
+					},
+					{
+						"name": "country",
+						"type": "String"
+					},
+					{
+						"name": "most_purchased_product",
+						"type": "String"
+					},
+					{
+						"name": "max_bags",
+						"type": "String"
+					},
+					{
+						"name": "least_purchased_product",
+						"type": "String"
+					},
+					{
+						"name": "min_bags",
+						"type": "String"
+					}
+				]
+			},
+			"dependsOn": []
+		}
+	]
+}

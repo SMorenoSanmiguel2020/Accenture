@@ -1,0 +1,48 @@
+{
+	"name": "AzureSqlTable1",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "AzureSqlDatabase1",
+			"type": "LinkedServiceReference"
+		},
+		"annotations": [],
+		"type": "AzureSqlTable",
+		"schema": [
+			{
+				"name": "id",
+				"type": "int",
+				"precision": 10
+			},
+			{
+				"name": "first_name",
+				"type": "varchar"
+			},
+			{
+				"name": "most_purchased_product",
+				"type": "varchar"
+			},
+			{
+				"name": "max_bags",
+				"type": "int",
+				"precision": 10
+			},
+			{
+				"name": "least_purchased_product",
+				"type": "varchar"
+			},
+			{
+				"name": "min_bags",
+				"type": "int",
+				"precision": 10
+			},
+			{
+				"name": "grocery_id",
+				"type": "varchar"
+			}
+		],
+		"typeProperties": {
+			"schema": "dbo",
+			"table": "Grocery_Result"
+		}
+	}
+}
